@@ -87,6 +87,17 @@ def teacher_update(request, id):
 
 
 def teacher_delete(request, id):
-    user = get_object_or_404(USer, id=id)
+    user = get_object_or_404(User, id=id)
     user.delete()
     return redirect('teachers')
+
+
+def students_list(request, id):
+    teacher = get_object_or_404(User, id=id)
+    students = teacher.student_set.all()
+
+    context = {
+        'students': students,
+        'teacher': teacher,
+    }
+    return render(request, 'app_main/students.html', context)
