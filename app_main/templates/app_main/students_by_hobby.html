@@ -1,0 +1,12 @@
+<h1>Hobbyning nomi - {{ hobby_name }}</h1>
+<table>
+    <tr>
+        <th>O'quvchilarning ro'yhati</th>
+    </tr>
+    {% for student in students %}
+        <tr class="border border-s-0 border-t-0 border-e-0 border-slate-500">
+            <th class="p-4">{{ forloop.counter }}</th>
+            <td class="p-4 border border-t-0 border-b-0 border-slate-500">{{ student.first_name }} {{ student.last_name }}</td>
+        </tr>
+    {% endfor %}
+</table>

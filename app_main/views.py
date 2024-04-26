@@ -3,6 +3,9 @@ from django.contrib.auth import get_user_model
 from django.http import Http404
 
 from .forms import UserForm
+from app_users.forms import StudentForm
+
+from app_users.models import Student, Hobby
 
 User = get_user_model()
 
@@ -101,3 +104,33 @@ def students_list(request, id):
         'teacher': teacher,
     }
     return render(request, 'app_main/students.html', context)
+
+
+def student_create(request, teacher_id):
+
+    if request.method == 'POST':
+        teacher = get_object_or_404(User, id=teacher_id)
+        form = StudentForm()
+
+        if form.is_valid():
+            student = form.save(commit=False)
+            student.teacher = teacher
+            student.save()
+
+            return redirect('teacher_students', id=teacher_id)
+
+    form = StudentForm()
+    context = {
+        'form': form
+    }
+    return render(request, 'app_main/new_student.html', context)
+
+
+def students_by_hobby(request, hobby_name):
+    filtered_students = Student.objects.filter(hobbies__name=hobby_name).distinct()
+
+    context = {
+        'students': filtered_students,
+        'hobby_name': hobby_name
+    }
+    return render(request, 'app_main/students_by_hobby.html', context)
