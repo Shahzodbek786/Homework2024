@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Detail</h1>
+<table>
+    <thead>
+    <tr class="border border-s-0 border-t-0 border-e-0 border-slate-500">
+        <th class="p-4 border border-t-0 border-b-0 border-slate-500">Ismi</th>
+        <th class="p-4 border border-t-0 border-b-0 border-slate-500">Familiya</th>
+        <th class="p-4 border border-t-0 border-b-0 border-e-0 border-slate-500">Hobbilar</th>
+        <th class="p-4 border border-t-0 border-b-0 border-e-0 border-slate-500">Kitob</th>
+        <th class="p-4 border border-t-0 border-b-0 border-slate-500">O'qitivchining nomi</th>
+    </tr>
+    </thead>
+    <tbody>
+    <td class="p-4 border border-t-0 border-b-0 border-slate-500">{{ student.first_name }}</td>
+    <td class="p-4 border border-t-0 border-b-0 border-slate-500">{{ student.last_name }}</td>
+    <td class="p-4">
+        {% for hobby in student.hobbies.all %}
+            <a href="{% url 'filter_students' hobby_id=hobby.id %}" class="inline-block hover:ring-2 border rounded border-white text-white py-1 px-2 bg-green-600">{{ hobby.name }}</a>
+        {% empty %}
+        -
+        {% endfor %}
+    </td>
+
+
+    <td class="p-4 border border-t-0 border-b-0 border-slate-500">
+        {% if student.book %}
+            {{ student.book.title }}
+        {% else %}
+            -
+        {% endif %}
+    </td>
+
+    <td class="p-4 border border-t-0 border-b-0 border-slate-500">{{ student.teacher }}</td>
+    </tbody>
+</table>
+
+
+
+
+
+
+{% endblock content %}
