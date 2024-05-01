@@ -1,32 +1,32 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import get_user_model
-from django.http import Http404
+from django.contrib.auth.decorators import login_required
 
 from .forms import UserForm
+from .decorators import is_superuser
 from app_users.forms import StudentForm
-
-from app_users.models import Student, Hobby
+from app_users.models import Hobby, Student
 
 User = get_user_model()
 
 
+@login_required(login_url='login')
 def home_page(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
-
     full_name = request.user.get_full_name()
     context = {
-        "full_name": full_name
+        "full_name": full_name,
     }
 
     return render(request, 'app_main/home.html', context)
 
 
+@login_required(login_url='login')
+@is_superuser
 def teachers(request):
     if not request.user.is_authenticated:
         return redirect('login')
 
-    if not request.user.is_staff or not request.user.is_superuser:
+    if not request.user.is_staff and not request.user.is_superuser:
         return redirect('home')
 
     teachers_list = User.objects.all()
@@ -38,6 +38,8 @@ def teachers(request):
     return render(request, 'app_main/teachers.html', context)
 
 
+@login_required(login_url='login')
+@is_superuser
 def teacher_create(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
@@ -56,6 +58,8 @@ def teacher_create(request):
     return render(request, 'app_main/teacher_form.html', context)
 
 
+@login_required(login_url='login')
+@is_superuser
 def teacher_detail(request, id):
     teacher = get_object_or_404(User, id=id)
     context = {
@@ -64,6 +68,8 @@ def teacher_detail(request, id):
     return render(request, 'app_main/teacher.html', context)
 
 
+@login_required(login_url='login')
+@is_superuser
 def teacher_update(request, id):
     teacher = get_object_or_404(User, id=id)
 
@@ -81,19 +87,26 @@ def teacher_update(request, id):
     form = UserForm(instance=teacher)
     context = {
         'teacher': teacher,
-        'form': form,
+        'form': form
     }
     return render(request, 'app_main/teacher_form.html', context)
 
 
+@login_required(login_url='login')
+@is_superuser
 def teacher_delete(request, id):
     user = get_object_or_404(User, id=id)
     user.delete()
     return redirect('teachers')
 
 
+@login_required(login_url='login')
 def students_list(request, id):
     teacher = get_object_or_404(User, id=id)
+
+    if teacher.id != request.user.id:
+        return redirect("home")
+
     students = teacher.student_set.all()
 
     context = {
@@ -103,15 +116,22 @@ def students_list(request, id):
     return render(request, 'app_main/students.html', context)
 
 
+@login_required(login_url='login')
 def student_create(request, teacher_id):
     if request.method == 'POST':
         teacher = get_object_or_404(User, id=teacher_id)
-        form = StudentForm()
+        form = StudentForm(request.POST)
+        hobbies_list = request.POST.get('hobbies')  # ['1', '3', '5']
 
         if form.is_valid():
             student = form.save(commit=False)
             student.teacher = teacher
-            student.save()
+
+            for hobby_id in hobbies_list:
+                hobby = Hobby.objects.get(id=hobby_id)
+                # print(hobby)
+                # student.hobbies.add(int(hobby_id))
+                # student.save()
 
             return redirect('teacher_students', id=teacher_id)
 
@@ -124,14 +144,12 @@ def student_create(request, teacher_id):
     return render(request, 'app_main/student_form.html', context)
 
 
+@login_required(login_url='login')
 def student_update(request, student_id):
-    if not request.user.is_authenticated:
-        return redirect('login')
-
-    if not request.user.is_superuser:
-        return redirect('teachers')
-
     student = get_object_or_404(Student, id=student_id)
+
+    if student.teacher != request.user:
+        return redirect("home")
 
     if request.method == 'POST':
         form = StudentForm(request.POST, instance=student)
@@ -149,21 +167,26 @@ def student_update(request, student_id):
     return render(request, 'app_main/student_form.html', context)
 
 
-def student_delete(request, id):
-    student = get_object_or_404(Student, id=id)
+@login_required(login_url='login')
+def student_delete(request, student_id):
+    # Studentni o'zini olish yoki 404
+    student = get_object_or_404(Student, id=student_id)
+
+    if student.teacher != request.user:
+        return redirect("home")
+
+    # Studentning ustozini ID soni olish studentni o'chirmasdan avval
+    teacher = student.teacher
+
+    # Studentni o'chirish
     student.delete()
-    return redirect('teachers')
+
+    # Student ustozini o'quvchilarini sahifasiga foydalanuvchini qayta yo'nalitishi
+    return redirect("teacher_students", id=teacher.id)
 
 
-def student_detail(request, id):
-    student = Student.objects.get(id=id)
-    context = {
-        'student': student
-    }
-    return render(request, 'app_main/student_detail.html', context)
-
-
-
+@login_required(login_url='login')
+@is_superuser
 def filter_students(request, hobby_id):
     hobby = get_object_or_404(Hobby, id=hobby_id)
 
